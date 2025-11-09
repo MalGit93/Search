@@ -8,7 +8,7 @@ from rich.table import Table
 
 from .analysis import build_insights
 from .config import AppConfig, SourceConfig
-from .fetchers import rss
+from .fetchers import rss, website
 from .fetchers.webpage import fetch_article_body
 from .storage import Storage
 
@@ -30,8 +30,11 @@ class NewsPipeline:
 
     def _process_source(self, source: SourceConfig, *, limit: int, fetch_full_content: bool) -> None:
         console.log(f"Fetching {source.name} ({source.url})")
-        if source.type.lower() == "rss":
+        source_type = source.type.lower()
+        if source_type == "rss":
             iterator = rss.fetch_articles(source, limit=limit)
+        elif source_type in {"website", "site", "html"}:
+            iterator = website.fetch_articles(source, limit=limit)
         else:
             console.log(f"Unknown source type '{source.type}' for {source.name}, skipping")
             return

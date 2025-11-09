@@ -4,11 +4,11 @@ A lightweight toolkit for aggregating and analysing news about independent garag
 
 ## Features
 
-* Load a configurable list of RSS sources describing independent garage news outlets.
+* Load a configurable list of RSS feeds **or straight website URLs** describing independent garage news outlets.
 * Fetch latest articles and store them locally in a SQLite database.
 * Retrieve full article content (best effort) for deeper analysis.
 * Generate quick insight summaries, extract trending keywords, and draft policy suggestions.
-* Provide a Typer-powered CLI for running ingestion jobs or listing sources.
+* Provide a Typer-powered CLI for running ingestion jobs, listing sources, or using a guided setup wizard to add sites without editing files.
 
 ## Getting Started
 
@@ -20,12 +20,20 @@ A lightweight toolkit for aggregating and analysing news about independent garag
 
 2. **Configure sources**
 
-   Update `config/sources.yaml` with the feeds you want to follow. Each source entry supports:
+   Run the guided setup to paste the websites you want to monitor:
+
+   ```bash
+   garage-news setup
+   ```
+
+   The wizard saves your selections into `config/sources.yaml` and can optionally run a fetch immediately.
+
+   You can also edit the YAML file manually. Each source entry supports:
 
    ```yaml
    - name: Garage Wire           # Display name
      url: https://example.com    # RSS/Atom feed URL
-     type: rss                   # Currently only 'rss' is supported
+     type: rss                   # Use 'rss' for feeds or 'website' for HTML pages
      category: business          # Optional category label
      polling_interval_minutes: 360
      tags: [uk, independent]     # Optional keyword tags
@@ -57,7 +65,7 @@ config/sources.yaml --> garage_news.config --> garage_news.pipeline --> garage_n
 ```
 
 * `garage_news.config`: Parses YAML configuration into dataclasses.
-* `garage_news.fetchers`: Currently includes an RSS fetcher and an HTML body extractor.
+* `garage_news.fetchers`: Includes RSS feeds, generic website scrapers, and an HTML body extractor.
 * `garage_news.storage`: Wraps SQLite persistence with an upsert helper.
 * `garage_news.analysis`: Provides basic summarisation, keyword extraction, and policy suggestion heuristics.
 * `garage_news.pipeline`: Orchestrates fetching, storage, and rendering insights.
