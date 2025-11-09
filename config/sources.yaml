@@ -18,3 +18,7 @@ sources:
     category: industry
     polling_interval_minutes: 720
     tags: [uk, dealer]
+  - name: Example Site Landing Page
+    url: https://www.example.com/news
+    type: website
+    polling_interval_minutes: 360
