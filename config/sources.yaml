@@ -1,0 +1,20 @@
+# Example configuration containing a blend of RSS feeds related to independent garages.
+sources:
+  - name: Garage Wire
+    url: https://garagewire.co.uk/feed/
+    type: rss
+    category: business
+    polling_interval_minutes: 360
+    tags: [uk, independent]
+  - name: Aftermarket Online
+    url: https://www.aftermarketonline.net/rss/news
+    type: rss
+    category: aftermarket
+    polling_interval_minutes: 360
+    tags: [uk, aftermarket]
+  - name: Motor Trader Independent
+    url: https://www.motortrader.com/feed
+    type: rss
+    category: industry
+    polling_interval_minutes: 720
+    tags: [uk, dealer]
