@@ -21,7 +21,17 @@ A lightweight toolkit for aggregating and analysing news about independent garag
    ```
 
    This script creates a local virtual environment (in `.garage-news-env`), installs the
-   required packages, and launches the source setup wizard automatically.
+   required packages, and launches the source setup wizard automatically. On some systems
+   the default Python installation might not include `pip` for virtual environments; the
+   quickstart script now attempts to bootstrap it automatically, but if you still see
+   errors mentioning a missing pip executable you can manually run:
+
+   ```bash
+   python -m ensurepip --upgrade
+   python -m pip install --upgrade pip
+   ```
+
+   and then rerun `python quickstart.py`.
 
    If you prefer to manage things manually, create a virtual environment and install the
    package yourself:

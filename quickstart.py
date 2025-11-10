@@ -31,14 +31,30 @@ def ensure_environment() -> None:
     builder = venv.EnvBuilder(with_pip=True)
     builder.create(ENV_DIR)
 
+    python_path = _venv_python(ENV_DIR)
+    if not python_path.exists():
+        raise RuntimeError("Virtual environment missing python executable.")
+
+    pip_path = _venv_pip(ENV_DIR)
+    if pip_path.exists():
+        return
+
+    print("Bootstrapping pip inside the virtual environment...")
+    subprocess.check_call([str(python_path), "-m", "ensurepip", "--upgrade"])
+
 
 def install_project() -> None:
-    pip_path = _venv_pip(ENV_DIR)
-    if not pip_path.exists():
-        raise RuntimeError("Virtual environment missing pip executable.")
+    python_path = _venv_python(ENV_DIR)
+    if not python_path.exists():
+        raise RuntimeError("Virtual environment missing python executable.")
+
+    if not _venv_pip(ENV_DIR).exists():
+        print("Pip was not detected; attempting to bootstrap it...")
+        subprocess.check_call([str(python_path), "-m", "ensurepip", "--upgrade"])
+
     print("Installing Garage News dependencies (this might take a moment)...")
-    subprocess.check_call([str(pip_path), "install", "--upgrade", "pip"])
-    subprocess.check_call([str(pip_path), "install", "-e", str(PROJECT_ROOT)])
+    subprocess.check_call([str(python_path), "-m", "pip", "install", "--upgrade", "pip"])
+    subprocess.check_call([str(python_path), "-m", "pip", "install", "-e", str(PROJECT_ROOT)])
 
 
 def launch_setup_wizard() -> int:
