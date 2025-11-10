@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import json
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +15,7 @@ import yaml
 
 from .config import AppConfig, SourceConfig, load_config
 from .pipeline import NewsPipeline
+from .storage import Article
 
 app = typer.Typer(help="Independent garage news aggregation toolkit")
 console = Console()
@@ -89,15 +92,52 @@ def setup_ui(
 
 
 @app.command("guided-run")
-def guided_run() -> None:
+def guided_run(
+    config: Path = typer.Option(
+        Path("config/sources.yaml"), "--config", "-c", help="Path to configuration file"
+    ),
+    use_config_sources: bool = typer.Option(
+        False,
+        "--use-config-sources",
+        help="Include sources defined in the configuration file",
+    ),
+) -> None:
     """Prompt for URLs and date range, ideal for quick experiments (e.g. Google Colab)."""
+
+    base_sources: list[SourceConfig] = []
+    database_path: Path = Path("garage_news_colab.db")
+
+    if use_config_sources:
+        try:
+            existing_config = load_config(config)
+        except FileNotFoundError:
+            typer.echo(f"No configuration found at {config}. Continuing without preloaded sources.")
+        else:
+            base_sources = list(existing_config.sources)
+            database_path = existing_config.database_path
+            typer.echo(f"Loaded {len(base_sources)} source(s) from {config}.")
 
     typer.echo("Enter the website or RSS URLs you want to scan.")
     typer.echo("Separate entries with commas or new lines. We'll normalise missing https:// prefixes for you.")
-    urls = _prompt_urls()
-    if not urls:
+    urls = _prompt_urls(allow_empty=bool(base_sources))
+
+    if not urls and not base_sources:
         typer.echo("No valid URLs supplied, exiting.")
         raise typer.Exit(code=1)
+
+    existing_urls = {source.url for source in base_sources}
+    additions: list[SourceConfig] = []
+    for url in urls:
+        if url in existing_urls:
+            typer.echo(f"Skipping duplicate source: {url}")
+            continue
+        source = SourceConfig(name=_derive_name(url), url=url, type="website")
+        base_sources.append(source)
+        existing_urls.add(url)
+        additions.append(source)
+
+    if additions:
+        typer.echo(f"Added {len(additions)} new source(s) for this guided run.")
 
     start_date = _prompt_date("Start date (YYYY-MM-DD, optional)")
     end_date = _prompt_date("End date (YYYY-MM-DD, optional)")
@@ -108,8 +148,7 @@ def guided_run() -> None:
     limit_per_source = _prompt_limit()
     fetch_full_content = typer.confirm("Download full article text?", default=False)
 
-    sources = [SourceConfig(name=_derive_name(url), url=url, type="website") for url in urls]
-    app_config = AppConfig(sources=sources, database_path=Path("garage_news_colab.db"))
+    app_config = AppConfig(sources=base_sources, database_path=database_path)
 
     console.rule("Fetching articles")
     pipeline = NewsPipeline(app_config)
@@ -138,6 +177,8 @@ def guided_run() -> None:
         )
 
     console.print(table)
+
+    _maybe_export_articles(articles)
 
 
 def _parse_urls(raw: str) -> list[str]:
@@ -192,9 +233,105 @@ def _source_to_mapping(source: SourceConfig) -> dict:
     return data
 
 
-def _prompt_urls() -> list[str]:
-    raw_urls = typer.prompt("URLs", default="")
-    return _parse_urls(raw_urls)
+def _prompt_urls(*, allow_empty: bool = False) -> list[str]:
+    while True:
+        raw_urls = typer.prompt("URLs", default="")
+        urls = _parse_urls(raw_urls)
+        if urls or allow_empty:
+            return urls
+        typer.echo("Please provide at least one valid URL or load sources from the config.")
+
+
+def _maybe_export_articles(articles: list[Article]) -> None:
+    if not articles:
+        return
+
+    choice = typer.prompt(
+        "Export results? (none/csv/json/txt)",
+        default="none",
+        value_proc=lambda value: value.strip().lower(),
+    )
+
+    valid_choices = {"none", "csv", "json", "txt"}
+    while choice not in valid_choices:
+        typer.echo("Please choose from: none, csv, json, txt")
+        choice = typer.prompt(
+            "Export results? (none/csv/json/txt)",
+            default="none",
+            value_proc=lambda value: value.strip().lower(),
+        )
+
+    if choice == "none":
+        return
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    extension = "txt" if choice == "txt" else choice
+    default_name = Path(f"guided_run_results_{timestamp}.{extension}")
+    destination = typer.prompt("Destination file", default=str(default_name))
+    path = Path(destination)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if choice == "csv":
+        _export_csv(articles, path)
+    elif choice == "json":
+        _export_json(articles, path)
+    else:
+        _export_text(articles, path)
+
+    typer.echo(f"Saved {len(articles)} article(s) to {path.resolve()}")
+
+
+def _ensure_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _article_to_mapping(article: Article) -> dict[str, object]:
+    published = _ensure_utc(article.published_at or article.fetched_at)
+    fetched = _ensure_utc(article.fetched_at)
+    return {
+        "source_name": article.source_name,
+        "source_url": article.source_url,
+        "title": article.title,
+        "link": article.link,
+        "summary": article.summary,
+        "content": article.content,
+        "published_at": published.isoformat(),
+        "fetched_at": fetched.isoformat(),
+        "category": article.category,
+        "tags": article.tags,
+    }
+
+
+def _export_csv(articles: list[Article], path: Path) -> None:
+    rows = [_article_to_mapping(article) for article in articles]
+    fieldnames = list(rows[0].keys())
+    with path.open("w", encoding="utf8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _export_json(articles: list[Article], path: Path) -> None:
+    rows = [_article_to_mapping(article) for article in articles]
+    with path.open("w", encoding="utf8") as handle:
+        json.dump(rows, handle, ensure_ascii=False, indent=2)
+
+
+def _export_text(articles: list[Article], path: Path) -> None:
+    lines: list[str] = []
+    for article in articles:
+        published = _ensure_utc(article.published_at or article.fetched_at)
+        lines.append(published.strftime("%Y-%m-%d %H:%M UTC"))
+        lines.append(article.source_name)
+        lines.append(article.title)
+        lines.append(article.link)
+        if article.summary:
+            lines.append(article.summary)
+        lines.append("")
+    with path.open("w", encoding="utf8") as handle:
+        handle.write("\n".join(lines).strip() + "\n")
 
 
 def _prompt_date(message: str) -> datetime | None:
