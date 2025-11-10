@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from typing import Iterable, Iterator
 
 import feedparser
+import requests
 
 from ..config import SourceConfig
 from ..datetime_utils import ensure_utc
+
+
+USER_AGENT = "garage-news-bot/0.1"
 
 
 class RSSFetcher:
@@ -18,7 +23,15 @@ class RSSFetcher:
         self.source = source
 
     def fetch(self, limit: int = 5) -> Iterable[dict]:
-        feed = feedparser.parse(self.source.url)
+        headers = {"User-Agent": USER_AGENT}
+        try:
+            response = requests.get(self.source.url, headers=headers, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            logging.getLogger(__name__).error("Failed to fetch %s: %s", self.source.url, exc)
+            return
+
+        feed = feedparser.parse(response.content)
         entries = feed.entries[:limit]
         for entry in entries:
             yield {
