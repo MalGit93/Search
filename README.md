@@ -14,19 +14,23 @@ A lightweight toolkit for aggregating and analysing news about independent garag
 
 1. **Install dependencies**
 
-   ```bash
-   pip install -e .
-   ```
-
-2. **Configure sources**
-
-   Run the guided setup to paste the websites you want to monitor:
+   The quickest path is to let the bundled bootstrap script handle everything. Just run:
 
    ```bash
-   garage-news setup
+   python quickstart.py
    ```
 
-   The wizard saves your selections into `config/sources.yaml` and can optionally run a fetch immediately.
+   This script creates a local virtual environment (in `.garage-news-env`), installs the
+   required packages, and launches the source setup wizard automatically.
+
+   If you prefer to manage things manually, create a virtual environment and install the
+   package yourself:
+
+   ```bash
+   python -m venv .venv
+   .venv/bin/pip install -e .        # Use .venv\Scripts\pip on Windows
+   ``
+2. **Configure sources*
 
    You can also edit the YAML file manually. Each source entry supports:
 
