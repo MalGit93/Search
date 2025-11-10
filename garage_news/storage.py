@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -38,6 +38,16 @@ class Article:
     fetched_at: datetime
     category: Optional[str]
     tags: str
+
+
+def _to_utc_iso(dt: Optional[datetime]) -> Optional[str]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    return dt.isoformat()
 
 
 class Storage:
@@ -89,8 +99,8 @@ class Storage:
                     link,
                     summary,
                     content,
-                    published_at.isoformat() if published_at else None,
-                    fetched_at.isoformat(),
+                    _to_utc_iso(published_at),
+                    _to_utc_iso(fetched_at),
                     source.category,
                     tags,
                 ),
