@@ -52,8 +52,11 @@ class Storage:
         conn = sqlite3.connect(self.path)
         try:
             yield conn
-        finally:
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
             conn.close()
 
     def upsert_article(
