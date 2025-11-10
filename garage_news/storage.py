@@ -100,13 +100,56 @@ class Storage:
             )
 
     def recent_articles(self, limit: int = 50) -> list[Article]:
+        return self._fetch_articles(
+            where_clauses=[],
+            params=[],
+            limit=limit,
+        )
+
+    def articles_between(
+        self,
+        *,
+        start: datetime | None,
+        end: datetime | None,
+        limit: int | None = None,
+    ) -> list[Article]:
+        order_expr = "COALESCE(published_at, fetched_at)"
+        clauses: list[str] = []
+        params: list[object] = []
+
+        if start is not None:
+            clauses.append(f"{order_expr} >= ?")
+            params.append(start.isoformat())
+        if end is not None:
+            clauses.append(f"{order_expr} <= ?")
+            params.append(end.isoformat())
+
+        return self._fetch_articles(clauses, params, limit=limit, order_expression=order_expr)
+
+    def _fetch_articles(
+        self,
+        where_clauses: list[str],
+        params: list[object],
+        *,
+        limit: int | None,
+        order_expression: str = "COALESCE(published_at, fetched_at)",
+    ) -> list[Article]:
+        query = (
+            "SELECT source_name, source_url, title, link, summary, content, published_at, fetched_at, category, tags "
+            f"FROM articles"
+        )
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+        query += f" ORDER BY {order_expression} DESC"
+        query_params = list(params)
+        if limit is not None:
+            query += " LIMIT ?"
+            query_params.append(int(limit))
+
         with self._connect() as conn:
-            cur = conn.execute(
-                "SELECT source_name, source_url, title, link, summary, content, published_at, fetched_at, category, tags "
-                "FROM articles ORDER BY COALESCE(published_at, fetched_at) DESC LIMIT ?",
-                (limit,),
-            )
+            cur = conn.execute(query, query_params)
             rows = cur.fetchall()
+
         return [
             Article(
                 source_name=row[0],
