@@ -18,7 +18,57 @@ sources:
     category: industry
     polling_interval_minutes: 720
     tags: [uk, dealer]
-  - name: Example Site Landing Page
-    url: https://www.example.com/news
+  - name: Aftermarket Online (Website)
+    url: https://aftermarketonline.net
     type: website
+    category: aftermarket
     polling_interval_minutes: 360
+    tags: [uk, aftermarket]
+  - name: AM Media Pack 2025
+    url: https://amcdn.blob.core.windows.net/media/1/AM/am-media-pack-2025.pdf
+    type: website
+    category: media
+    polling_interval_minutes: 720
+    tags: [uk, publication]
+  - name: Automotive Management Magazine LinkedIn
+    url: https://uk.linkedin.com/company/automotive-management-magazine
+    type: website
+    category: social
+    polling_interval_minutes: 720
+    tags: [uk, industry]
+  - name: Autotechnician
+    url: https://autotechnician.co.uk
+    type: website
+    category: industry
+    polling_interval_minutes: 360
+    tags: [uk, independent]
+  - name: Bodyshop Magazine RMI Tag
+    url: https://www.bodyshopmag.com/tag/rmi/
+    type: website
+    category: bodyshop
+    polling_interval_minutes: 360
+    tags: [uk, repair]
+  - name: Car Dealer Magazine
+    url: https://cardealermagazine.co.uk
+    type: website
+    category: industry
+    polling_interval_minutes: 360
+    tags: [uk, dealer]
+  - name: CAT Magazine Independent Garages Tag
+    url: https://www.catmag.co.uk/tag/independent-garages/
+    type: website
+    category: aftermarket
+    polling_interval_minutes: 360
+    tags: [uk, independent]
+  - name: CAT Magazine
+    url: https://www.catmag.co.uk
+    type: website
+    category: aftermarket
+    polling_interval_minutes: 360
+    tags: [uk, publication]
+  - name: Garage & MOT
+    url: https://www.garageandmot.com
+    type: website
+    category: mot
+    polling_interval_minutes: 360
+    tags: [uk, mot]
