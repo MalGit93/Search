@@ -38,7 +38,7 @@ A lightweight toolkit for aggregating and analysing news about independent garag
 
    ```bash
    python -m venv .venv
-   .venv/bin/pip install -e .        # Use .venv\Scripts\pip on Windows
+   .venv/bin/pip install --no-use-pep517 -e .        # Use .venv\Scripts\pip on Windows
    ``
 2. **Configure sources*
 

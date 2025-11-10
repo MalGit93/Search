@@ -53,8 +53,24 @@ def install_project() -> None:
         subprocess.check_call([str(python_path), "-m", "ensurepip", "--upgrade"])
 
     print("Installing Garage News dependencies (this might take a moment)...")
-    subprocess.check_call([str(python_path), "-m", "pip", "install", "--upgrade", "pip"])
-    subprocess.check_call([str(python_path), "-m", "pip", "install", "-e", str(PROJECT_ROOT)])
+    try:
+        subprocess.check_call([str(python_path), "-m", "pip", "install", "--upgrade", "pip"])
+    except subprocess.CalledProcessError as exc:
+        print(
+            "Warning: Unable to upgrade pip automatically; proceeding with the existing version."
+        )
+        print(f"  Command {exc.cmd} exited with status {exc.returncode}.")
+    subprocess.check_call(
+        [
+            str(python_path),
+            "-m",
+            "pip",
+            "install",
+            "--no-use-pep517",
+            "-e",
+            str(PROJECT_ROOT),
+        ]
+    )
 
 
 def launch_setup_wizard() -> int:
