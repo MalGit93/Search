@@ -39,7 +39,9 @@ class NewsPipeline:
             console.log(f"Unknown source type '{source.type}' for {source.name}, skipping")
             return
 
+        yielded_any = False
         for entry in iterator:
+            yielded_any = True
             link = entry.get("link")
             if not link:
                 continue
@@ -58,6 +60,13 @@ class NewsPipeline:
                 published_at=entry.get("published"),
                 fetched_at=datetime.utcnow(),
             )
+        if not yielded_any:
+            self._log_fetch_abort(source)
+
+    def _log_fetch_abort(self, source: SourceConfig) -> None:
+        console.log(
+            f"[yellow]No entries retrieved from {source.name} ({source.url}); fetcher may have aborted early.[/yellow]"
+        )
 
     def _render_insight(self, insight) -> None:
         console.print(Panel("Latest Insights", style="bold cyan"))

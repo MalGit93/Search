@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import logging
 from typing import Iterator
 from urllib.parse import urljoin, urlparse
 
@@ -16,8 +17,12 @@ def fetch_articles(source: SourceConfig, limit: int = 5, timeout: int = 10) -> I
     """Scrape a website landing page for recent article links."""
 
     headers = {"User-Agent": USER_AGENT}
-    response = requests.get(source.url, headers=headers, timeout=timeout)
-    response.raise_for_status()
+    try:
+        response = requests.get(source.url, headers=headers, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logging.getLogger(__name__).error("Failed to fetch %s: %s", source.url, exc)
+        return
     soup = BeautifulSoup(response.text, "html.parser")
     base_url = response.url
     seen: set[str] = set()
