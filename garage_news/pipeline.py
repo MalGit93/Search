@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from rich.console import Console
 from rich.panel import Panel
@@ -58,7 +58,7 @@ class NewsPipeline:
                 summary=entry.get("summary"),
                 content=content,
                 published_at=entry.get("published"),
-                fetched_at=datetime.utcnow(),
+                fetched_at=datetime.now(timezone.utc),
             )
         if not yielded_any:
             self._log_fetch_abort(source)

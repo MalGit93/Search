@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
@@ -27,8 +27,8 @@ class StorageTransactionTests(TestCase):
                 link="https://example.com/article",
                 summary="Summary",
                 content="Content",
-                published_at=datetime.now(),
-                fetched_at=datetime.now(),
+                published_at=datetime.now(timezone.utc),
+                fetched_at=datetime.now(timezone.utc),
             )
 
             articles = storage.recent_articles()

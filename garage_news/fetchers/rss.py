@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, Iterator
 
 import feedparser
 
 from ..config import SourceConfig
+from ..datetime_utils import ensure_utc
 
 
 class RSSFetcher:
@@ -30,13 +31,14 @@ class RSSFetcher:
     def _parse_published(self, entry: feedparser.FeedParserDict) -> datetime | None:
         published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
         if published_parsed:
-            return datetime(*published_parsed[:6])
+            return ensure_utc(datetime(*published_parsed[:6], tzinfo=timezone.utc))
         published = entry.get("published") or entry.get("updated")
         if published:
             try:
-                return datetime.fromisoformat(published)
+                parsed = datetime.fromisoformat(published)
             except ValueError:
                 return None
+            return ensure_utc(parsed)
         return None
 
 

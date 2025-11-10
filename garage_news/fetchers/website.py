@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import requests
 
 from ..config import SourceConfig
+from ..datetime_utils import ensure_utc
 
 USER_AGENT = "garage-news-bot/0.1"
 
@@ -112,6 +113,7 @@ def _parse_time(node) -> datetime | None:
     if normalized.endswith("Z"):
         normalized = normalized[:-1] + "+00:00"
     try:
-        return datetime.fromisoformat(normalized)
+        parsed = datetime.fromisoformat(normalized)
     except ValueError:
         return None
+    return ensure_utc(parsed)
