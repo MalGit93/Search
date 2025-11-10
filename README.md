@@ -29,21 +29,8 @@ A lightweight toolkit for aggregating and analysing news about independent garag
    ```bash
    python -m venv .venv
    .venv/bin/pip install -e .        # Use .venv\Scripts\pip on Windows
-   ```
-
-2. **Configure sources**
-
-   If you used `quickstart.py` the wizard will already be running. Otherwise you can launch
-   it at any time via either of the following commands:
-
-   ```bash
-   garage-news setup
-   # or, without installing a console script
-   python -m garage_news setup
-   ```
-
-   Paste the websites you want to monitor when prompted. The wizard saves your selections
-   into `config/sources.yaml` and can optionally run a fetch immediately.
+   ``
+2. **Configure sources*
 
    You can also edit the YAML file manually. Each source entry supports:
 
