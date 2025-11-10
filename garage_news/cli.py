@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
 import typer
 from rich import print
+from rich.console import Console
+from rich.table import Table
 import yaml
 
 from .config import AppConfig, SourceConfig, load_config
 from .pipeline import NewsPipeline
 
 app = typer.Typer(help="Independent garage news aggregation toolkit")
+console = Console()
 
 
 @app.command()
@@ -84,6 +88,58 @@ def setup_ui(
         pipeline.run(limit_per_source=limit_per_source)
 
 
+@app.command("guided-run")
+def guided_run() -> None:
+    """Prompt for URLs and date range, ideal for quick experiments (e.g. Google Colab)."""
+
+    typer.echo("Enter the website or RSS URLs you want to scan.")
+    typer.echo("Separate entries with commas or new lines. We'll normalise missing https:// prefixes for you.")
+    urls = _prompt_urls()
+    if not urls:
+        typer.echo("No valid URLs supplied, exiting.")
+        raise typer.Exit(code=1)
+
+    start_date = _prompt_date("Start date (YYYY-MM-DD, optional)")
+    end_date = _prompt_date("End date (YYYY-MM-DD, optional)")
+    if start_date and end_date and end_date < start_date:
+        typer.echo("End date must be the same as or later than the start date.")
+        raise typer.Exit(code=1)
+
+    limit_per_source = _prompt_limit()
+    fetch_full_content = typer.confirm("Download full article text?", default=False)
+
+    sources = [SourceConfig(name=_derive_name(url), url=url, type="website") for url in urls]
+    app_config = AppConfig(sources=sources, database_path=Path("garage_news_colab.db"))
+
+    console.rule("Fetching articles")
+    pipeline = NewsPipeline(app_config)
+    pipeline.run(limit_per_source=limit_per_source, fetch_full_content=fetch_full_content)
+
+    console.rule("Filtered results")
+    articles = pipeline.storage.articles_between(start=start_date, end=end_date, limit=200)
+    if not articles:
+        console.print("[yellow]No articles found for the selected date range.[/yellow]")
+        return
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Published (UTC)", justify="center")
+    table.add_column("Source")
+    table.add_column("Title")
+    table.add_column("Link")
+
+    for article in articles:
+        published = article.published_at or article.fetched_at
+        published_utc = published.astimezone(timezone.utc)
+        table.add_row(
+            published_utc.strftime("%Y-%m-%d %H:%M"),
+            article.source_name,
+            article.title,
+            article.link,
+        )
+
+    console.print(table)
+
+
 def _parse_urls(raw: str) -> list[str]:
     chunks: list[str] = []
     for piece in raw.replace("\r", "\n").split("\n"):
@@ -134,6 +190,52 @@ def _source_to_mapping(source: SourceConfig) -> dict:
     if not data.get("tags"):
         data.pop("tags", None)
     return data
+
+
+def _prompt_urls() -> list[str]:
+    raw_urls = typer.prompt("URLs", default="")
+    return _parse_urls(raw_urls)
+
+
+def _prompt_date(message: str) -> datetime | None:
+    while True:
+        value = typer.prompt(message, default="", show_default=False)
+        value = value.strip()
+        if not value:
+            return None
+        try:
+            return _parse_date(value)
+        except ValueError as exc:
+            typer.echo(f"Invalid date '{value}': {exc}")
+
+
+def _parse_date(value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        try:
+            parsed = datetime.strptime(value, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("use ISO 8601 or YYYY-MM-DD format") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    else:
+        parsed = parsed.astimezone(timezone.utc)
+    return parsed
+
+
+def _prompt_limit() -> int:
+    while True:
+        raw_value = typer.prompt("Articles to fetch per source", default="5")
+        try:
+            value = int(raw_value)
+        except ValueError:
+            typer.echo("Please enter a whole number.")
+            continue
+        if value <= 0:
+            typer.echo("Please choose a positive number of articles.")
+            continue
+        return value
 
 
 if __name__ == "__main__":

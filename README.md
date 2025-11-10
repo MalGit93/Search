@@ -59,6 +59,15 @@ A lightweight toolkit for aggregating and analysing news about independent garag
    garage-news list-sources
    ```
 
+5. **Run a quick interactive session (great for Google Colab)**
+
+   ```bash
+   python -m garage_news.cli guided-run
+   ```
+
+   The command asks for URLs plus optional start/end dates, runs the fetch pipeline, and prints a table of
+   matching articles alongside the usual insight summary.
+
 ## Architecture Overview
 
 ```
