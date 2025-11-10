@@ -71,11 +71,7 @@ sources:
 
     monkeypatch.setattr("garage_news.cli.NewsPipeline", pipeline_factory)
 
-    result = runner.invoke(
-        app,
-        ["guided-run", "--config", str(config_path), "--use-config-sources"],
-        input="\n\n\n\n\nnone\n",
-    )
+    result = runner.invoke(app, ["guided-run", "--config", str(config_path)], input="\n\n\n\n\n")
 
     assert result.exit_code == 0, result.stdout
     assert created_pipelines, "pipeline was not created"
@@ -95,16 +91,24 @@ def test_guided_run_exports_text(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
     monkeypatch.setattr("garage_news.cli.NewsPipeline", pipeline_factory)
 
-    export_path = tmp_path / "results.txt"
-    result = runner.invoke(
-        app,
-        ["guided-run"],
-        input=f"https://manual.example\n\n\n\n\nn\ntxt\n{export_path}\n",
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        """
+database_path: guided.db
+sources:
+  - name: Saved Source
+    url: https://saved.example
+    type: website
+        """.strip()
     )
+
+    export_path = tmp_path / "results.txt"
+    inputs = "\n".join(["", "", "", "n", "txt", str(export_path)]) + "\n"
+    result = runner.invoke(app, ["guided-run", "--config", str(config_path)], input=inputs)
 
     assert result.exit_code == 0, result.stdout
     assert export_path.exists()
     contents = export_path.read_text(encoding="utf8")
     assert "Example headline" in contents
-    assert "https://manual.example" not in contents  # ensure link from article, not input URL list
+    assert "https://saved.example" not in contents  # ensure link from article, not input URL list
 
