@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timezone
 from pathlib import Path
 import sys
 
@@ -41,3 +42,4 @@ def test_pipeline_continues_after_fetch_error(monkeypatch, tmp_path):
 
     articles = pipeline.storage.recent_articles()
     assert [article.title for article in articles] == ["Good News"]
+    assert articles[0].fetched_at.tzinfo is timezone.utc
