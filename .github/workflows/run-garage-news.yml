@@ -1,0 +1,63 @@
+name: Run garage-news pipeline
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+    inputs:
+      config_path:
+        description: "Path to the YAML config containing sources"
+        required: false
+        default: "config/sources.yaml"
+      limit_per_source:
+        description: "Maximum articles fetched per source"
+        required: false
+        default: "5"
+      skip_full_content:
+        description: "Skip fetching full article body"
+        required: false
+        default: "true"
+
+env:
+  PYTHON_VERSION: "3.11"
+  CONFIG_PATH: ${{ github.event.inputs.config_path || 'config/sources.yaml' }}
+  LIMIT_PER_SOURCE: ${{ github.event.inputs.limit_per_source || '5' }}
+  SKIP_FULL_CONTENT: ${{ github.event.inputs.skip_full_content || 'true' }}
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-use-pep517 -e .
+
+      - name: Run garage-news
+        shell: bash
+        run: |
+          ARGS=("--config" "$CONFIG_PATH" "--limit-per-source" "$LIMIT_PER_SOURCE")
+          if [[ "${SKIP_FULL_CONTENT,,}" == "true" ]]; then
+            ARGS+=("--skip-full-content")
+          fi
+
+          echo "Running: garage-news run ${ARGS[*]}"
+          garage-news run "${ARGS[@]}" | tee run-log.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-news-run
+          path: |
+            garage_news.db
+            run-log.txt
+          if-no-files-found: warn
