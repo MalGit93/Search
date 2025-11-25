@@ -10,8 +10,10 @@ from rich import print
 from rich.console import Console
 from rich.table import Table
 
-from .config import AppConfig, load_config
+from .config import AppConfig, load_config, save_config
 from .pipeline import NewsPipeline
+from .fetchers.rss import RSSFetcher
+from .fetchers.website import discover_feed_links
 from .storage import Article
 from .web import create_app
 
@@ -39,6 +41,54 @@ def list_sources(config: Path = typer.Option(Path("config/sources.yaml"), "--con
     app_config = load_config(config)
     for source in app_config.sources:
         print(f"[bold]{source.name}[/bold] ({source.type}) - {source.url}")
+
+
+@app.command("validate-sources")
+def validate_sources(
+    config: Path = typer.Option(Path("config/sources.yaml"), "--config", "-c", help="Path to configuration file"),
+    limit: int = typer.Option(1, help="Entries to retrieve while validating each feed"),
+) -> None:
+    """Validate and refresh configured feed URLs.
+
+    The command attempts to fetch each configured source. RSS feeds are checked for
+    availability, automatically falling back to discovered alternatives if the primary
+    URL is unhealthy. Any recovered URLs are written back to the configuration file so
+    future runs stay fresh.
+    """
+
+    app_config = load_config(config)
+    updated = False
+
+    for source in app_config.sources:
+        typer.echo(f"Checking {source.name} ({source.type})")
+
+        if source.type.lower() == "rss":
+            fetcher = RSSFetcher(source)
+            feed_url, entries, warnings = fetcher.validate(limit=limit)
+            for warning in warnings:
+                typer.echo(f"  [warning] {warning}")
+            if feed_url and feed_url != source.url:
+                typer.echo(f"  Updating feed URL -> {feed_url}")
+                source.url = feed_url
+                updated = True
+            elif entries:
+                typer.echo("  Feed looks healthy")
+            else:
+                typer.echo("  No usable feed located")
+        elif source.type.lower() == "website":
+            discovered = discover_feed_links(source.url)
+            if discovered:
+                typer.echo(f"  Discovered feed(s): {', '.join(discovered)}")
+            else:
+                typer.echo("  No feed links advertised on the site")
+        else:
+            typer.echo("  Skipping unknown source type")
+
+    if updated:
+        save_config(app_config, config)
+        typer.echo(f"Saved updated sources to {config}")
+    else:
+        typer.echo("No configuration changes needed")
 
 
 @app.command("guided-run")
