@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+    <div class="panel-header">
+        <div>
+            <p class="eyebrow">Sources</p>
+            <h2>Manage feeds and sites</h2>
+        </div>
+        <form action="/refresh" method="post">
+            <button type="submit" class="pill">Run refresh</button>
+        </form>
+    </div>
+
+    {% if sources %}
+    <table class="data">
+        <thead>
+            <tr><th>Name</th><th>URL</th><th>Type</th><th>Category</th><th>Interval (min)</th><th>Tags</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {% for source in sources %}
+            <tr>
+                <td>{{ source.name }}</td>
+                <td><a href="{{ source.url }}" target="_blank" rel="noopener">{{ source.url }}</a></td>
+                <td>{{ source.type }}</td>
+                <td>{{ source.category or '—' }}</td>
+                <td class="numeric">{{ source.polling_interval_minutes }}</td>
+                <td>{{ ', '.join(source.tags) }}</td>
+                <td class="actions">
+                    <details>
+                        <summary class="pill">Edit</summary>
+                        <form class="stack" action="/sources/update" method="post">
+                            <input type="hidden" name="original_name" value="{{ source.name }}">
+                            <label>Name <input type="text" name="name" value="{{ source.name }}" required></label>
+                            <label>URL <input type="url" name="url" value="{{ source.url }}" required></label>
+                            <label>Type <input type="text" name="type" value="{{ source.type }}" required></label>
+                            <label>Category <input type="text" name="category" value="{{ source.category or '' }}"></label>
+                            <label>Polling interval (minutes) <input type="number" name="polling_interval_minutes" value="{{ source.polling_interval_minutes }}" min="5" step="5"></label>
+                            <label>Tags <input type="text" name="tags" value="{{ ', '.join(source.tags) }}" placeholder="comma separated"></label>
+                            <div class="form-actions">
+                                <button type="submit" class="pill">Update</button>
+                            </div>
+                        </form>
+                        <form action="/sources/delete" method="post" class="delete-form">
+                            <input type="hidden" name="name" value="{{ source.name }}">
+                            <button type="submit" class="pill danger">Remove</button>
+                        </form>
+                    </details>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="subdued">No sources configured yet. Add your first feed below.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div>
+            <p class="eyebrow">New source</p>
+            <h3>Add a feed or website</h3>
+        </div>
+    </div>
+    <form class="stack" action="/sources/add" method="post">
+        <label>Name <input type="text" name="name" required></label>
+        <label>URL <input type="url" name="url" required placeholder="https://example.com/feed"></label>
+        <label>Type <input type="text" name="type" value="rss" required></label>
+        <label>Category <input type="text" name="category" placeholder="aftermarket, policy, ..."></label>
+        <label>Polling interval (minutes) <input type="number" name="polling_interval_minutes" value="360" min="5" step="5"></label>
+        <label>Tags <input type="text" name="tags" placeholder="comma separated e.g. uk, independent"></label>
+        <div class="form-actions">
+            <button type="submit" class="pill">Save source</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

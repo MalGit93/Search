@@ -13,6 +13,7 @@ from rich.table import Table
 from .config import AppConfig, load_config
 from .pipeline import NewsPipeline
 from .storage import Article
+from .web import create_app
 
 app = typer.Typer(help="Independent garage news aggregation toolkit")
 console = Console()
@@ -233,6 +234,20 @@ def _prompt_limit() -> int:
             typer.echo("Please choose a positive number of articles.")
             continue
         return value
+
+
+@app.command()
+def serve(
+    config: Path = typer.Option(Path("config/sources.yaml"), "--config", "-c", help="Path to configuration file"),
+    host: str = typer.Option("0.0.0.0", help="Host interface to bind"),
+    port: int = typer.Option(8000, help="Port to bind"),
+) -> None:
+    """Launch the Garage News web dashboard."""
+
+    import uvicorn
+
+    app_instance = create_app(config_path=config)
+    uvicorn.run(app_instance, host=host, port=port)
 
 
 if __name__ == "__main__":

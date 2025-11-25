@@ -54,3 +54,28 @@ def load_config(path: Path | str) -> AppConfig:
     database_path = Path(db_path) if db_path else AppConfig.__dataclass_fields__["database_path"].default
 
     return AppConfig(sources=sources, database_path=database_path)
+
+
+def save_config(config: AppConfig, path: Path | str) -> None:
+    """Persist an :class:`AppConfig` to disk as YAML."""
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    serializable = {
+        "database_path": str(config.database_path),
+        "sources": [
+            {
+                "name": source.name,
+                "url": source.url,
+                "type": source.type,
+                "category": source.category,
+                "polling_interval_minutes": source.polling_interval_minutes,
+                "tags": list(source.tags),
+            }
+            for source in config.sources
+        ],
+    }
+
+    with path.open("w", encoding="utf8") as handle:
+        yaml.safe_dump(serializable, handle, sort_keys=False)
