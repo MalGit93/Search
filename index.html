@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage News • Static Overview</title>
+    <link rel="stylesheet" href="garage_news/web/static/main.css">
+</head>
+<body class="landing">
+    <header class="site-header">
+        <div class="container header-content">
+            <div class="brand">
+                <h1><a href="/">Garage News</a></h1>
+                <p class="tagline">Independent garage intelligence and policy insights</p>
+            </div>
+            <nav>
+                <a href="#getting-started">Getting started</a>
+                <a href="#hosting">Hosting</a>
+                <a href="#actions">Automation</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container landing-main">
+        <section class="panel hero">
+            <div>
+                <p class="eyebrow">Static landing page</p>
+                <h2>Ready for GitHub Pages or any static host</h2>
+                <p class="subdued">This page ships alongside the FastAPI UI so the project renders correctly when served from a static host. Use the links below to run the pipeline locally or review your configured sources.</p>
+                <div class="cta-group">
+                    <a class="pill" href="quickstart.py">Run locally</a>
+                    <a class="pill muted" href="config/sources.yaml">View sources.yaml</a>
+                    <a class="pill" href="garage_news/web/static/main.css">Open stylesheet</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="getting-started">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Setup</p>
+                    <h3>Local quickstart</h3>
+                </div>
+            </div>
+            <p class="subdued">Use the packaged helper script to spin up a virtual environment, install dependencies, and launch the guided source setup without editing any files.</p>
+            <pre class="code-block">python quickstart.py</pre>
+            <p class="subdued">Prefer manual control? Install in editable mode and run the CLI:</p>
+            <pre class="code-block">python -m venv .venv
+.venv/bin/pip install --no-use-pep517 -e .
+garage-news run</pre>
+        </section>
+
+        <section class="panel" id="hosting">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Hosting</p>
+                    <h3>Ship to GitHub Pages or another static host</h3>
+                </div>
+            </div>
+            <div class="card-grid">
+                <article class="card">
+                    <h4>Why this file exists</h4>
+                    <p class="subdued">GitHub Pages expects an <code>index.html</code> entrypoint. This static overview ensures the repository renders cleanly even when the FastAPI server is not running.</p>
+                </article>
+                <article class="card">
+                    <h4>Pages configuration</h4>
+                    <ol class="steps">
+                        <li>Commit this repository to your GitHub account.</li>
+                        <li>In repository settings, enable GitHub Pages from the <strong>main</strong> branch.</li>
+                        <li>Point your browser to the published URL; the stylesheet is loaded from <code>garage_news/web/static/main.css</code>.</li>
+                    </ol>
+                </article>
+                <article class="card">
+                    <h4>Running the live dashboard</h4>
+                    <p class="subdued">To see live insights instead of this static page, deploy the FastAPI app (for example with <code>uvicorn garage_news.web:create_app</code>) on a server or platform that supports Python, then visit the root route.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel" id="actions">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Automation</p>
+                    <h3>Use GitHub Actions to keep data fresh</h3>
+                </div>
+            </div>
+            <p class="subdued">The bundled workflow <code>.github/workflows/run-garage-news.yml</code> installs the package, runs the pipeline, and uploads the SQLite database plus console log as artifacts.</p>
+            <ol class="steps">
+                <li>Set your desired sources in <code>config/sources.yaml</code>.</li>
+                <li>Trigger <em>Actions → Run workflow</em> and optionally adjust inputs for limits or skipping full content.</li>
+                <li>Enable the daily schedule or tweak the cron expression to your needs.</li>
+            </ol>
+            <p class="subdued">You can self-host the API, use this static page for documentation, and download artifacts from automation runs when you need the stored data.</p>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>Garage News combines a static landing page for hosting with a FastAPI dashboard for live insights.</p>
+        </div>
+    </footer>
+</body>
+</html>
