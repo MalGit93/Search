@@ -78,6 +78,24 @@ A lightweight toolkit for aggregating and analysing news about independent garag
    The command asks for URLs plus optional start/end dates, runs the fetch pipeline, and prints a table of
    matching articles alongside the usual insight summary.
 
+## Running on GitHub Actions
+
+You can run the pipeline on a schedule or on-demand via GitHub Actions. The bundled workflow at
+`.github/workflows/run-garage-news.yml`:
+
+* Installs Python 3.11 and the package in editable mode.
+* Runs `garage-news run` against a configurable sources file (defaults to `config/sources.yaml`).
+* Uploads the generated SQLite database (`garage_news.db`) and the console log (`run-log.txt`) as artifacts.
+
+To enable it:
+
+1. Commit your desired `config/sources.yaml` (or another path) to the repository.
+2. In the GitHub UI, trigger **Actions → Run workflow** and optionally override the `config_path`,
+   `limit_per_source`, or `skip_full_content` inputs.
+3. For continuous collection, keep the default daily schedule (`30 6 * * *`) enabled or adjust the cron
+   expression in the workflow file.
+4. Retrieve artifacts from each run to review the stored database and log output.
+
 ## Architecture Overview
 
 ```
