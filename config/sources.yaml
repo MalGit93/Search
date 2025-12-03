@@ -1,73 +1,55 @@
 # Example configuration containing a blend of RSS feeds related to independent garages.
 sources:
-  - name: Garage Wire
-    url: https://garagewire.co.uk/feed/
-    type: rss
+  - name: Garage Wire News
+    url: https://garagewire.co.uk/category/news/
+    type: website
     category: business
     polling_interval_minutes: 360
     tags: [uk, independent]
-  - name: Aftermarket Online
-    url: https://www.aftermarketonline.net/rss/news
-    type: rss
-    category: aftermarket
-    polling_interval_minutes: 360
-    tags: [uk, aftermarket]
-  - name: Motor Trader Independent
-    url: https://www.motortrader.com/feed
-    type: rss
-    category: industry
-    polling_interval_minutes: 720
-    tags: [uk, dealer]
-  - name: Aftermarket Online (Website)
-    url: https://aftermarketonline.net
+  - name: Aftermarket Online News
+    url: https://aftermarketonline.net/category/news/
     type: website
     category: aftermarket
     polling_interval_minutes: 360
     tags: [uk, aftermarket]
-  - name: AM Media Pack 2025
-    url: https://amcdn.blob.core.windows.net/media/1/AM/am-media-pack-2025.pdf
+  - name: Motor Trader Latest News
+    url: https://www.motortrader.com/latest-news
+    type: website
+    category: industry
+    polling_interval_minutes: 720
+    tags: [uk, dealer]
+  - name: AM Online Latest News
+    url: https://www.am-online.com/news/latest-news/
     type: website
     category: media
     polling_interval_minutes: 720
     tags: [uk, publication]
-  - name: Automotive Management Magazine LinkedIn
-    url: https://uk.linkedin.com/company/automotive-management-magazine
-    type: website
-    category: social
-    polling_interval_minutes: 720
-    tags: [uk, industry]
-  - name: Autotechnician
-    url: https://autotechnician.co.uk
+  - name: Autotechnician News
+    url: https://autotechnician.co.uk/news/
     type: website
     category: industry
     polling_interval_minutes: 360
     tags: [uk, independent]
-  - name: Bodyshop Magazine RMI Tag
-    url: https://www.bodyshopmag.com/tag/rmi/
+  - name: Bodyshop Magazine News
+    url: https://www.bodyshopmag.com/category/news/
     type: website
     category: bodyshop
     polling_interval_minutes: 360
     tags: [uk, repair]
-  - name: Car Dealer Magazine
-    url: https://cardealermagazine.co.uk
+  - name: Car Dealer Magazine News
+    url: https://cardealermagazine.co.uk/category/latest-news
     type: website
     category: industry
     polling_interval_minutes: 360
     tags: [uk, dealer]
-  - name: CAT Magazine Independent Garages Tag
-    url: https://www.catmag.co.uk/tag/independent-garages/
+  - name: CAT Magazine News
+    url: https://www.catmag.co.uk/news/
     type: website
     category: aftermarket
     polling_interval_minutes: 360
     tags: [uk, independent]
-  - name: CAT Magazine
-    url: https://www.catmag.co.uk
-    type: website
-    category: aftermarket
-    polling_interval_minutes: 360
-    tags: [uk, publication]
-  - name: Garage & MOT
-    url: https://www.garageandmot.com
+  - name: Garage & MOT Magazine News
+    url: https://www.garageandmot.com/category/news/
     type: website
     category: mot
     polling_interval_minutes: 360
