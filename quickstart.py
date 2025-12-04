@@ -52,6 +52,9 @@ def ensure_sources_file() -> Path:
         return sources_path
 
     examples = [
+        "# One listing/section page per line (e.g., /news/). Do not add individual article URLs.",
+        "# Feel free to replace these examples with your own sites.",
+        "",
         "https://garagewire.co.uk/news/",
         "https://aftermarketonline.net/news/",
         "https://www.motortrader.com/latest-news/",

@@ -4,7 +4,7 @@ A small, self-contained tool that ingests news **listing pages**, discovers arti
 
 ## How it works
 
-1. You maintain a `sources.txt` file with **one listing URL per line** (e.g., a site's "News" or "Latest stories" page).
+1. You maintain a `sources.txt` file with **one listing URL per line** (e.g., a site's "News" or "Latest stories" page). Use only listing/section pages—**do not paste individual article URLs**; the scraper will discover them for you.
 2. For each listing page the scraper:
    - Downloads the HTML.
    - Filters in-domain links that look like article URLs (news/story/date-like paths).
@@ -25,7 +25,7 @@ A small, self-contained tool that ingests news **listing pages**, discovers arti
 
    You can also run the module directly without installation using `python -m garage_news.cli ...`.
 
-2. Create `sources.txt` (one listing URL per line). You can generate a starter file:
+2. Create `sources.txt` (one listing URL per line). You can generate a starter file. Listing URLs are the pages that list stories (e.g., `/news/`, `/latest-news/`), not the article pages themselves:
 
    ```bash
    python -m garage_news.cli init-sources
