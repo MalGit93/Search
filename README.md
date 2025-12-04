@@ -1,124 +1,65 @@
-# Garage News Aggregator
+# Garage News Scraper
 
-A lightweight toolkit for aggregating and analysing news about independent garages.
+A small, self-contained tool that ingests news **listing pages**, discovers article links, fetches each article, and exports the results to CSV. Each record includes the website, article URL, headline, full text (best effort), and the UTC timestamp when it was scraped.
 
-## Features
+## How it works
 
-* Load a configurable list of RSS feeds **or straight website URLs** describing independent garage news outlets.
-* Fetch latest articles and store them locally in a SQLite database.
-* Retrieve full article content (best effort) for deeper analysis.
-* Generate quick insight summaries, extract trending keywords, and draft policy suggestions.
-* Provide a Typer-powered CLI for running ingestion jobs, listing sources, or using a guided setup wizard to add sites without editing files.
+1. You maintain a `sources.txt` file with **one listing URL per line** (e.g., a site's "News" or "Latest stories" page).
+2. For each listing page the scraper:
+   - Downloads the HTML.
+   - Filters in-domain links that look like article URLs (news/story/date-like paths).
+3. It deduplicates every discovered article URL.
+4. For each article URL it fetches the page and pulls:
+   - Headline (prefers `og:title`, falls back to `<title>` or `<h1>`)
+   - Body text from `<article>` or common content containers
+5. Everything is written to `news_articles.csv` with columns: `website`, `article_url`, `headline`, `content`, `scraped_at`.
 
-## Getting Started
+## Quick start
 
-1. **Install dependencies**
-
-   The quickest path is to let the bundled bootstrap script handle everything. Just run:
-
-   ```bash
-   python quickstart.py
-   ```
-
-   This script creates a local virtual environment (in `.garage-news-env`), installs the
-   required packages, and launches the source setup wizard automatically. On some systems
-   the default Python installation might not include `pip` for virtual environments; the
-   quickstart script now attempts to bootstrap it automatically, but if you still see
-   errors mentioning a missing pip executable you can manually run:
-
-   ```bash
-   python -m ensurepip --upgrade
-   python -m pip install --upgrade pip
-   ```
-
-   and then rerun `python quickstart.py`.
-
-   If you prefer to manage things manually, create a virtual environment and install the
-   package yourself:
+1. (Optional) Install the CLI locally. There are no external dependencies, but installation enables the `garage-news` command:
 
    ```bash
    python -m venv .venv
-   .venv/bin/pip install --no-use-pep517 -e .        # Use .venv\Scripts\pip on Windows
-   ``
-2. **Configure sources*
-
-   You can also edit the YAML file manually. Each source entry supports:
-
-   ```yaml
-   - name: Garage Wire           # Display name
-     url: https://example.com    # RSS/Atom feed URL
-     type: rss                   # Use 'rss' for feeds or 'website' for HTML pages
-     category: business          # Optional category label
-     polling_interval_minutes: 360
-     tags: [uk, independent]     # Optional keyword tags
+   .venv/bin/pip install --no-use-pep517 -e .
    ```
 
-3. **Run the pipeline**
+   You can also run the module directly without installation using `python -m garage_news.cli ...`.
+
+2. Create `sources.txt` (one listing URL per line). You can generate a starter file:
 
    ```bash
-   garage-news run
+   python -m garage_news.cli init-sources
    ```
 
-   The command fetches the latest items from each configured source, stores them in `garage_news.db`,
-   and prints summarised insights to the console. Use `--limit-per-source` to cap the number of
-   articles per source and `--skip-full-content` to avoid downloading full article pages.
-
-4. **List configured sources**
+3. Run the scraper:
 
    ```bash
-   garage-news list-sources
+   python -m garage_news.cli run --sources sources.txt --output news_articles.csv
    ```
 
-5. **Run a quick interactive session (great for Google Colab)**
+4. Optional: preview discovered article URLs without fetching full pages:
 
    ```bash
-   python -m garage_news.cli guided-run
+   python -m garage_news.cli preview --limit 5
    ```
 
-   The command asks for URLs plus optional start/end dates, runs the fetch pipeline, and prints a table of
-   matching articles alongside the usual insight summary.
+## Configuration notes
 
-## Running on GitHub Actions
+- Only links on the **same domain** as the listing page are considered.
+- A handful of keywords (`news`, `article`, `story`, `2025`, `2024`, `2023`) plus a minimum path depth help weed out navigation links. Adjust the logic inside `garage_news/scraper.py` if you want a tighter or looser filter.
+- Paragraphs shorter than 40 characters are dropped by default; override with `--min-paragraph-length` on the CLI.
 
-You can run the pipeline on a schedule or on-demand via GitHub Actions. The bundled workflow at
-`.github/workflows/run-garage-news.yml`:
+## Output
 
-* Installs Python 3.11 and the package in editable mode.
-* Runs `garage-news run` against a configurable sources file (defaults to `config/sources.yaml`).
-* Uploads the generated SQLite database (`garage_news.db`) and the console log (`run-log.txt`) as artifacts.
+The generated CSV uses UTF-8 with BOM (`utf-8-sig`) and the following columns:
 
-To enable it:
-
-1. Commit your desired `config/sources.yaml` (or another path) to the repository.
-2. In the GitHub UI, trigger **Actions → Run workflow** and optionally override the `config_path`,
-   `limit_per_source`, or `skip_full_content` inputs.
-3. For continuous collection, keep the default daily schedule (`30 6 * * *`) enabled or adjust the cron
-   expression in the workflow file.
-4. Retrieve artifacts from each run to review the stored database and log output.
-
-## Architecture Overview
-
-```
-config/sources.yaml --> garage_news.config --> garage_news.pipeline --> garage_news.storage (SQLite)
-                                                   |                       |
-                                                   v                       v
-                                            garage_news.fetchers       garage_news.analysis
-```
-
-* `garage_news.config`: Parses YAML configuration into dataclasses.
-* `garage_news.fetchers`: Includes RSS feeds, generic website scrapers, and an HTML body extractor.
-* `garage_news.storage`: Wraps SQLite persistence with an upsert helper.
-* `garage_news.analysis`: Provides basic summarisation, keyword extraction, and policy suggestion heuristics.
-* `garage_news.pipeline`: Orchestrates fetching, storage, and rendering insights.
-* `garage_news.cli`: Command-line entrypoint using Typer.
-
-## Extending the Project
-
-* **Additional source types**: Implement new fetchers (e.g., JSON APIs) and register them in the pipeline.
-* **LLM integration**: Replace `garage_news.analysis.build_insights` with a call to your preferred LLM API,
-  providing article summaries and requesting structured outputs (policy memos, trend reports, etc.).
-* **Scheduling**: Run `garage-news run` on a cron schedule or via a task queue like Celery.
-* **UI/Reporting**: Export insights to a dashboard, Slack message, or email digest.
+| column        | description                                   |
+|---------------|-----------------------------------------------|
+| `website`     | Domain name hosting the article                |
+| `article_url` | Full URL of the article                        |
+| `headline`    | Extracted headline                             |
+| `content`     | Raw article text (best effort)                 |
+| `scraped_at`  | UTC timestamp when the article was processed   |
 
 ## License
 

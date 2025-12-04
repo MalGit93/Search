@@ -1,4 +1,2 @@
 include README.md
 recursive-include config *.yaml
-recursive-include garage_news/web/templates *.html
-recursive-include garage_news/web/static *
