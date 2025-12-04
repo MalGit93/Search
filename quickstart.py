@@ -1,5 +1,4 @@
-"""One-command bootstrap for Garage News."""
-
+"""Bootstrap script for the Garage News scraper."""
 from __future__ import annotations
 
 import os
@@ -31,61 +30,49 @@ def ensure_environment() -> None:
     builder = venv.EnvBuilder(with_pip=True)
     builder.create(ENV_DIR)
 
-    python_path = _venv_python(ENV_DIR)
-    if not python_path.exists():
-        raise RuntimeError("Virtual environment missing python executable.")
-
-    pip_path = _venv_pip(ENV_DIR)
-    if pip_path.exists():
-        return
-
-    print("Bootstrapping pip inside the virtual environment...")
-    subprocess.check_call([str(python_path), "-m", "ensurepip", "--upgrade"])
-
 
 def install_project() -> None:
     python_path = _venv_python(ENV_DIR)
+    pip_path = _venv_pip(ENV_DIR)
     if not python_path.exists():
         raise RuntimeError("Virtual environment missing python executable.")
 
-    if not _venv_pip(ENV_DIR).exists():
-        print("Pip was not detected; attempting to bootstrap it...")
+    if not pip_path.exists():
+        print("Bootstrapping pip inside the virtual environment...")
         subprocess.check_call([str(python_path), "-m", "ensurepip", "--upgrade"])
 
-    print("Installing Garage News dependencies (this might take a moment)...")
-    try:
-        subprocess.check_call([str(python_path), "-m", "pip", "install", "--upgrade", "pip"])
-    except subprocess.CalledProcessError as exc:
-        print(
-            "Warning: Unable to upgrade pip automatically; proceeding with the existing version."
-        )
-        print(f"  Command {exc.cmd} exited with status {exc.returncode}.")
-    subprocess.check_call(
-        [
-            str(python_path),
-            "-m",
-            "pip",
-            "install",
-            "--no-use-pep517",
-            "-e",
-            str(PROJECT_ROOT),
-        ]
-    )
+    print("Installing Garage News dependencies...")
+    subprocess.check_call([str(python_path), "-m", "pip", "install", "--upgrade", "pip"])
+    subprocess.check_call([str(python_path), "-m", "pip", "install", "--no-use-pep517", "-e", str(PROJECT_ROOT)])
 
 
-def launch_setup_wizard() -> int:
-    python_path = _venv_python(ENV_DIR)
-    if not python_path.exists():
-        raise RuntimeError("Virtual environment missing python executable.")
-    print("Launching the setup wizard...\n")
-    return subprocess.call([str(python_path), "-m", "garage_news.cli", "setup"], cwd=str(PROJECT_ROOT))
+def ensure_sources_file() -> Path:
+    sources_path = PROJECT_ROOT / "sources.txt"
+    if sources_path.exists():
+        return sources_path
+
+    examples = [
+        "# One listing/section page per line (e.g., /news/). Do not add individual article URLs.",
+        "# Feel free to replace these examples with your own sites.",
+        "",
+        "https://garagewire.co.uk/news/",
+        "https://aftermarketonline.net/news/",
+        "https://www.motortrader.com/latest-news/",
+    ]
+    sources_path.write_text("\n".join(examples), encoding="utf-8")
+    print(f"Created starter sources file at {sources_path}")
+    return sources_path
 
 
 def main() -> int:
     try:
         ensure_environment()
         install_project()
-        return launch_setup_wizard()
+        sources_path = ensure_sources_file()
+        python_path = _venv_python(ENV_DIR)
+        print("\nTo run the scraper, execute:\n")
+        print(f"  {python_path} -m garage_news.cli run --sources {sources_path} --output news_articles.csv\n")
+        return 0
     except subprocess.CalledProcessError as exc:
         print(f"Command failed with exit code {exc.returncode}: {exc.cmd}")
         return exc.returncode
